@@ -103,6 +103,7 @@ s.tot$grp <- factor(s.tot$grp, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sa
 #--------------------------------------------------------------------------------------------------------
 # sum coin value by dow
 #--------------------------------------------------------------------------------------------------------
+
 s.summary <- daily %>% select(-s_no,-name,-symbol, -volume, -marketcap, -y,-w) %>%  na.omit() %>%
   group_by(d) %>%  summarise_all(sum) %>%
   tidyr::pivot_longer(!d, names_to = "metric", values_to = "total")

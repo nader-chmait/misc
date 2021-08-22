@@ -38,46 +38,51 @@ d.high <-  daily %>% select(-s_no,-symbol,-close,-open,-low ,-marketcap,-volume)
 d.low <-   daily %>% select(-s_no,-symbol,-close,-high,-open,-marketcap,-volume) %>% group_by(name) %>% tidyr::pivot_wider(names_from = d, values_from = low)  %>%na.omit() #values_fill = list(open > 0)
 
 
+
+
 d.open <- d.open %>% select(name,y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%
   mutate(
-    OpenMon = Monday/ Monday,
-    OpenTue = Tuesday/ Monday,
-    OpenWed = Wednesday/ Monday,
-    OpenThu = Thursday/ Monday,
-    OpenFri = Friday/ Monday,
-    OpenSat = Saturday/ Monday,
-    OpenSun = Sunday/ Monday
+    OpenMon = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Monday),
+    OpenTue = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Tuesday),
+    OpenWed = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Wednesday),
+    OpenThu = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Thursday),
+    OpenFri = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Friday),
+    OpenSat = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Saturday),
+    OpenSun = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Sunday)
   )
 
 
 d.close <- d.close %>% select(name,y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%         
-  mutate(CloseMon = Monday/ Monday,
-         CloseTue = Tuesday/ Monday,
-         CloseWed = Wednesday/ Monday,
-         CloseThu = Thursday/ Monday,
-         CloseFri = Friday/ Monday,
-         CloseSat = Saturday/ Monday,
-         CloseSun = Sunday/ Monday
+  mutate(
+    CloseMon = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Monday),
+    CloseTue = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Tuesday),
+    CloseWed = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Wednesday),
+    CloseThu = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Thursday),
+    CloseFri = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Friday),
+    CloseSat = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Saturday),
+    CloseSun = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Sunday)
   )
 
 d.high <- d.high %>% select(name,y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%         
-  mutate(HighMon = Monday/ Monday,
-         HighTue = Tuesday/ Monday,
-         HighWed = Wednesday/ Monday,
-         HighThu = Thursday/ Monday,
-         HighFri = Friday/ Monday,
-         HighSat = Saturday/ Monday,
-         HighSun = Sunday/ Monday
+  mutate(
+    HighMon = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Monday),
+    HighTue = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Tuesday),
+    HighWed = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Wednesday),
+    HighThu = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Thursday),
+    HighFri = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Friday),
+    HighSat = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Saturday),
+    HighSun = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Sunday)
   )
 
 d.low <- d.low %>% select(name,y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%
-  mutate(LowMon = Monday/ Monday,
-         LowTue = Tuesday/ Monday,
-         LowWed = Wednesday/ Monday,
-         LowThu = Thursday/ Monday,
-         LowFri = Friday/ Monday,
-         LowSat = Saturday/ Monday,
-         LowSun = Sunday/ Monday
+  mutate(
+    LowMon = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Monday),
+    LowTue = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Tuesday),
+    LowWed = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Wednesday),
+    LowThu = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Thursday),
+    LowFri = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Friday),
+    LowSat = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Saturday),
+    LowSun = rowMeans(across(c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))/ Sunday)
   )
 
 
@@ -105,13 +110,15 @@ s.tot$grp <- factor(s.tot$grp, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sa
 #--------------------------------------------------------------------------------------------------------
 # sum coin value by dow
 #--------------------------------------------------------------------------------------------------------
-s.summary <- daily %>% select(-s_no,-symbol, -volume, -marketcap, -y,-w) %>%  na.omit() %>%
+daily.scaled <- daily %>% group_by(name) %>% mutate_at(c(4,5,6,7), funs(c(scale(.)))) %>% ungroup()
+
+s.summary <- daily.scaled %>% select(-s_no,-symbol, -volume, -marketcap, -y,-w) %>%  na.omit() %>%
   group_by(name, d) %>%  summarise_all(sum) %>%
   tidyr::pivot_longer(!c(name,d), names_to = "metric", values_to = "total")
 
 s.summary <- s.summary %>% group_by(name, metric) %>% mutate(rank =rank(total)) %>% ungroup
 s.summary <- s.summary %>% group_by(d, metric) %>% mutate(tot =sum(total)) %>% ungroup
-s.summary$tot <- log(s.summary$tot)
+#s.summary$tot <- log(s.summary$tot)
 s.summary <- s.summary %>% group_by(d, metric) %>% summarise(rank=sum(rank), tot= sum(tot))
 
 s.summary$d <- factor(s.summary$d, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
@@ -124,7 +131,7 @@ s.tot %>% ggplot(aes(x=grp, y=tot, fill=grp, label =round(pc,1))) +
   theme_minimal() + theme(axis.text.x = element_text(angle = 90, hjust = 1))  + facet_wrap(~ metric.type, scales = "free")
 
 #Shows total value of coin for each day of week
-s.summary %>% ggplot(aes(x=d, y=rank, fill=d, label=round(tot))) +
+s.summary %>% ggplot(aes(x=d, y=tot, fill=d, label=round(rank))) +
   geom_bar(stat = "identity")   + geom_label() +  ggtitle("all coins") + #coord_flip()
   theme_minimal() + theme(axis.text.x = element_text(angle = 90, hjust = 1))  + facet_wrap(~ metric, scales = "free")
 
