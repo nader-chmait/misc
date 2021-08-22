@@ -1,27 +1,24 @@
+rm(list=ls())
 library(dplyr)
 library(janitor)
-h <- readxl::read_excel ("/Users/nchmait/Documents/Rdir/CryptoAnalytics/misc/misc/bitcoin_2018-1-1_2021-8-1.xlsx")
+
 h <- read.csv("/Users/nchmait/Documents/Rdir/CryptoAnalytics/misc/misc/archive/coin_BinanceCoin.csv", header = T)
-str(h)
+#str(h)
 
 h<- h %>% clean_names() 
-h$dt <- as.Date(h$date, "%B-%d-%Y")#as.Date(h$date, "%B-%d-%Y")
+h$dt <- as.Date(h$date)#as.Date(h$date, "%B-%d-%Y")
 h$d <- weekdays(h$dt)
 h$w <- lubridate::week(h$dt)
 h$y <- lubridate::year(h$dt)
 
 daily <- h %>% select(-date, -dt) 
 
-#AO.presale.matrix <- tidyr::spread(data = AO.presale %>% select(-fname, -priority, -state) , key = source, value = isMail)
-d.open <- daily %>% select(-close,-high,-low,-market_cap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = open)  %>%na.omit() #values_fill = list(open > 0)
-d.close <- daily %>% select(-open,-high,-low,-market_cap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = close)  %>%na.omit() #values_fill = list(open > 0)
-d.high <- daily %>% select(-close,-open,-low,-market_cap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = high)  %>%na.omit() #values_fill = list(open > 0)
-d.low <- daily %>% select(-close,-high,-open,-market_cap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = low)  %>%na.omit() #values_fill = list(open > 0)
+d.open <-  daily %>% select(-s_no,-name,-symbol,-close,-high,-low,-marketcap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = open)  %>%na.omit() #values_fill = list(open > 0)
+d.close <- daily %>% select(-s_no,-name,-symbol,-open,-high,-low,-marketcap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = close)  %>%na.omit() #values_fill = list(open > 0)
+d.high <-  daily %>% select(-s_no,-name,-symbol,-close,-open,-low,-marketcap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = high)  %>%na.omit() #values_fill = list(open > 0)
+d.low <-   daily %>% select(-s_no,-name,-symbol,-close,-high,-open,-marketcap,-volume) %>% tidyr::pivot_wider(names_from = d, values_from = low)  %>%na.omit() #values_fill = list(open > 0)
 
-#d.open <- d.open %>% select(y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%na.omit() %>%  
-#  mutate(across(c("Monday", "Tuesday",  "Wednesday", "Thursday",  "Friday", "Saturday",  "Sunday"  ), .fns =  ~.*100/Wednesday))
 
-  
 d.open <- d.open %>% select(y,w,Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) %>%
   mutate(OpenOverMon = rowSums(across(c("Monday", "Tuesday",  "Wednesday", "Thursday",  "Friday", "Saturday",  "Sunday"))> Monday),
          OpenOverTue = rowSums(across(c("Monday", "Tuesday",  "Wednesday", "Thursday",  "Friday", "Saturday",  "Sunday"))> Tuesday),
